@@ -18,26 +18,43 @@
   <div class="card">
     <h1>Absensi Kartika</h1>
     <p>Silakan isi data kehadiran</p>
-    <input type="text" id="nama" placeholder="Nama Lengkap">
-    <input type="text" id="kelas" placeholder="Kelas">
+    <input type="text" id="nama" placeholder="Nama Lengkap" required>
+    <input type="text" id="kelas" placeholder="Kelas" required>
     <button onclick="absen()">Kirim Absensi</button>
     <div id="status"></div>
   </div>
 
   <script>
+    const URL_GOOGLE_SHEET = "GANTI_DENGAN_LINK_KAMU_NANTI"
+
     function absen() {
       const nama = document.getElementById('nama').value;
       const kelas = document.getElementById('kelas').value;
       const status = document.getElementById('status');
+      
       if(nama === '' || kelas === '') {
         status.innerHTML = 'Nama dan Kelas wajib diisi!';
         status.style.color = 'red';
         return;
       }
-      status.innerHTML = 'Terima kasih ' + nama + ', absensi berhasil dikirim!';
-      status.style.color = 'green';
-      document.getElementById('nama').value = '';
-      document.getElementById('kelas').value = '';
+
+      status.innerHTML = 'Mengirim...';
+      status.style.color = 'blue';
+
+      fetch(URL_GOOGLE_SHEET, {
+        method: 'POST',
+        body: JSON.stringify({nama, kelas, waktu: new Date().toLocaleString("id-ID")})
+      })
+      .then(res => {
+        status.innerHTML = 'Terima kasih ' + nama + ', absensi berhasil!';
+        status.style.color = 'green';
+        document.getElementById('nama').value = '';
+        document.getElementById('kelas').value = '';
+      })
+      .catch(err => {
+        status.innerHTML = 'Gagal kirim. Coba lagi.';
+        status.style.color = 'red';
+      });
     }
   </script>
 </body>
