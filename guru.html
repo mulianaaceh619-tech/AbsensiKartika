@@ -2,47 +2,92 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <title>Login Guru</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login Guru SMP KARTIKA XIV</title>
   <style>
-    body { font-family: Arial; background: #f0f2f5; display: flex; justify-content: center; align-items: center; height: 100vh; }
-    .card { background: white; padding: 30px; border-radius: 12px; width: 90%; max-width: 400px; }
-    input, button { width: 100%; padding: 12px; margin: 10px 0; border-radius: 8px; border: 1px solid #ccc; }
-    button { background: #27ae60; color: white; border: none; cursor: pointer; }
-    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+    body { font-family: Arial; background: #eef2f7; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px; }
+    .card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 100%; max-width: 450px; text-align: center; }
+    h2 { color: #2c3e50; margin-bottom: 5px; }
+    p.sub { color: #7f8c8d; margin-bottom: 20px; }
+    input, button { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
+    button { background: #27ae60; color: white; border: none; cursor: pointer; font-weight: bold; }
+    button:hover { background: #219150; }
+    #err { color: red; font-size: 14px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 14px; }
+    th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+    th { background: #3498db; color: white; }
+    .logout { background: #e74c3c; margin-top: 15px; }
   </style>
 </head>
 <body>
   <div class="card" id="loginBox">
     <h2>Login Guru</h2>
-    <input type="password" id="pass" placeholder="Masukkan Password Guru">
+    <p class="sub">SMP KARTIKA XIV</p>
+    <input type="text" id="nip" placeholder="Masukkan NIP">
+    <input type="password" id="pass" placeholder="Masukkan Password">
     <button onclick="login()">Masuk</button>
-    <p id="err" style="color:red"></p>
+    <p id="err"></p>
   </div>
 
-  <div class="card" id="dataBox" style="display:none; max-width: 800px;">
-    <h2>Data Absensi</h2>
+  <div class="card" id="dataBox" style="display:none; max-width: 950px;">
+    <h2>Rekap Absensi Siswa</h2>
+    <p>Selamat datang, <b><span id="namaGuru"></span></b></p>
     <button onclick="exportExcel()">Download Excel</button>
-    <table id="tabelAbsen"><tr><th>Waktu</th><th>Nama</th><th>Kelas</th></tr></table>
+    <div style="overflow-x:auto;">
+      <table id="tabelAbsen">
+        <tr><th>No</th><th>Waktu Absen</th><th>Nama Siswa</th><th>Kelas</th></tr>
+      </table>
+    </div>
+    <button class="logout" onclick="logout()">Logout</button>
   </div>
 
 <script>
-  const PASSWORD_GURU = "kartika123"; // ganti password nya
-  const URL_GOOGLE_SHEET = "NANTI_KITA_ISI_DENGAN_LINK_APPS_SCRIPT"
+  // DATA GURU DARI EXCEL KAMU
+  const daftarGuru = [
+    {nama: "Sabriadi,S.Pd", nip: "197705092007011016", pass: "guru12345"},
+    {nama: "Ainal Mardhiah,S.Pd", nip: "19670810198012001", pass: "guru12345"},
+    {nama: "Drs.Baihaki", nip: "196607192006041003", pass: "guru12345"},
+    {nama: "Jemi Noven,S.Pd", nip: "199111032019031006", pass: "guru12345"},
+    {nama: "Khalisna Fitri,S.Pd", nip: "123456", pass: "guru12345"},
+    {nama: "Nabila Muridha,S.Pd", nip: "1234567", pass: "guru12345"},
+    {nama: "Rina Diana,S.Pd,M.Pd", nip: "198007302006042014", pass: "guru12345"},
+    {nama: "RUZIKNA,S.Pd", nip: "12345678", pass: "guru12345"},
+    {nama: "Samsul Bahri,S.Pd", nip: "19811002200501003", pass: "guru12345"},
+    {nama: "Siti Sarah,S.Pd", nip: "123456789", pass: "guru12345"},
+    {nama: "Nanda Phonna,S.Pd", nip: "12345678910", pass: "guru12345"},
+    {nama: "Dien jauhari,S.Pd,M.Pd", nip: "12345678911", pass: "guru12345"}
+  ];
 
   function login(){
-    if(document.getElementById('pass').value === PASSWORD_GURU){
+    const nip = document.getElementById('nip').value.trim();
+    const pass = document.getElementById('pass').value.trim();
+    const guru = daftarGuru.find(g => g.nip === nip && g.pass === pass);
+    
+    if(guru){
+      document.getElementById('err').innerText = "";
       document.getElementById('loginBox').style.display = 'none';
       document.getElementById('dataBox').style.display = 'block';
+      document.getElementById('namaGuru').innerText = guru.nama;
       loadData();
     } else {
-      document.getElementById('err').innerText = "Password salah!";
+      document.getElementById('err').innerText = "NIP atau Password salah!";
     }
   }
 
+  function logout(){
+    document.getElementById('loginBox').style.display = 'block';
+    document.getElementById('dataBox').style.display = 'none';
+    document.getElementById('nip').value = '';
+    document.getElementById('pass').value = '';
+  }
+
   function loadData(){
-    // Nanti kita ambil data dari Google Sheet
-    document.getElementById('tabelAbsen').innerHTML += "<tr><td colspan=3>Data akan muncul setelah disambung ke Google Sheet</td></tr>";
+    // Nanti kita isi dari Google Sheet
+    document.getElementById('tabelAbsen').innerHTML += "<tr><td colspan=4 style='text-align:center'>Belum ada data. Sambungkan ke Google Sheet dulu</td></tr>";
+  }
+
+  function exportExcel(){
+    alert("Fitur download akan aktif setelah data masuk Google Sheet");
   }
 </script>
 </body>
