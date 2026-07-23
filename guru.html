@@ -2,47 +2,34 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Login Guru SMP KARTIKA XIV</title>
+  <title>Absensi Guru SMP KARTIKA XIV</title>
   <style>
     body { font-family: Arial; background: #eef2f7; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px; }
-    .card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 100%; max-width: 450px; text-align: center; }
-    h2 { color: #2c3e50; margin-bottom: 5px; }
-    p.sub { color: #7f8c8d; margin-bottom: 20px; }
-    input, button { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
+   .card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 100%; max-width: 500px; text-align: center; }
+    h2 { color: #2c3e50; }
+    input, button { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid #ccc; font-size: 16px; box-sizing: border-box; }
     button { background: #27ae60; color: white; border: none; cursor: pointer; font-weight: bold; }
-    button:hover { background: #219150; }
-    #err { color: red; font-size: 14px; }
-    table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 14px; }
-    th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
-    th { background: #3498db; color: white; }
-    .logout { background: #e74c3c; margin-top: 15px; }
+    button.pulang { background: #e67e22; }
+    button:disabled { background: #95a5a6; cursor: not-allowed; }
+    #status { margin-top: 15px; font-weight: bold; font-size: 16px; }
+   .tepat { color: green; }.telat { color: red; }.info { color: #3498db; }
+   .jam-info { background: #ecf0f1; padding: 10px; border-radius: 8px; margin: 15px 0; font-size: 14px; }
   </style>
 </head>
 <body>
   <div class="card" id="loginBox">
-    <h2>Login Guru</h2>
-    <p class="sub">SMP KARTIKA XIV</p>
+    <h2>Absensi Guru</h2>
+    <p>SMP KARTIKA XIV</p>
+    <div class="jam-info" id="jamInfo"></div>
     <input type="text" id="nip" placeholder="Masukkan NIP">
     <input type="password" id="pass" placeholder="Masukkan Password">
-    <button onclick="login()">Masuk</button>
-    <p id="err"></p>
-  </div>
-
-  <div class="card" id="dataBox" style="display:none; max-width: 950px;">
-    <h2>Rekap Absensi Siswa</h2>
-    <p>Selamat datang, <b><span id="namaGuru"></span></b></p>
-    <button onclick="exportExcel()">Download Excel</button>
-    <div style="overflow-x:auto;">
-      <table id="tabelAbsen">
-        <tr><th>No</th><th>Waktu Absen</th><th>Nama Siswa</th><th>Kelas</th></tr>
-      </table>
-    </div>
-    <button class="logout" onclick="logout()">Logout</button>
+    <button onclick="absen('masuk')">Absen Masuk</button>
+    <button class="pulang" onclick="absen('pulang')">Absen Pulang</button>
+    <div id="status"></div>
+    <br><a href="/guru.html">Lihat Rekap Data</a>
   </div>
 
 <script>
-  // DATA GURU DARI EXCEL KAMU
   const daftarGuru = [
     {nama: "Sabriadi,S.Pd", nip: "197705092007011016", pass: "guru12345"},
     {nama: "Ainal Mardhiah,S.Pd", nip: "19670810198012001", pass: "guru12345"},
@@ -58,36 +45,61 @@
     {nama: "Dien jauhari,S.Pd,M.Pd", nip: "12345678911", pass: "guru12345"}
   ];
 
-  function login(){
+  // SETTING JAM
+  const JAM_MASUK = "07:30:00";
+  const JAM_PULANG = {
+    1: "13:00:00", // Senin
+    2: "13:00:00", // Selasa
+    3: "13:00:00", // Rabu
+    4: "13:00:00", // Kamis
+    5: "11:30:00", // Jumat
+    6: "12:00:00" // Sabtu
+  };
+
+  // TAMPILKAN INFO JAM HARI INI
+  const hariIni = new Date().getDay(); // 0=Minggu, 1=Senin...
+  const namaHari = ["Minggu","Senin","Selasa","Rabu","Kamis","Jumat","Sabtu"];
+  const jamPulangHariIni = JAM_PULANG[hariIni] || "Libur";
+  document.getElementById('jamInfo').innerHTML =
+    `<b>Hari ini: ${namaHari[hariIni]}</b><br>
+     Masuk: ${JAM_MASUK} | Pulang: ${jamPulangHariIni}`;
+
+  function absen(jenis){
     const nip = document.getElementById('nip').value.trim();
     const pass = document.getElementById('pass').value.trim();
     const guru = daftarGuru.find(g => g.nip === nip && g.pass === pass);
-    
-    if(guru){
-      document.getElementById('err').innerText = "";
-      document.getElementById('loginBox').style.display = 'none';
-      document.getElementById('dataBox').style.display = 'block';
-      document.getElementById('namaGuru').innerText = guru.nama;
-      loadData();
-    } else {
-      document.getElementById('err').innerText = "NIP atau Password salah!";
+    const status = document.getElementById('status');
+
+    if(!guru){
+      status.innerHTML = "NIP atau Password salah!";
+      status.className = "telat";
+      return;
     }
-  }
 
-  function logout(){
-    document.getElementById('loginBox').style.display = 'block';
-    document.getElementById('dataBox').style.display = 'none';
-    document.getElementById('nip').value = '';
-    document.getElementById('pass').value = '';
-  }
+    const sekarang = new Date();
+    const waktuSekarang = sekarang.toLocaleTimeString("id-ID");
+    const tanggal = sekarang.toLocaleDateString("id-ID");
 
-  function loadData(){
-    // Nanti kita isi dari Google Sheet
-    document.getElementById('tabelAbsen').innerHTML += "<tr><td colspan=4 style='text-align:center'>Belum ada data. Sambungkan ke Google Sheet dulu</td></tr>";
-  }
+    let keterangan = "";
+    let kelasCSS = "info";
 
-  function exportExcel(){
-    alert("Fitur download akan aktif setelah data masuk Google Sheet");
+    if(jenis === 'masuk'){
+      keterangan = waktuSekarang <= JAM_MASUK? "Hadir Tepat Waktu" : "Terlambat Masuk";
+      kelasCSS = waktuSekarang <= JAM_MASUK? "tepat" : "telat";
+    }
+    else { // pulang
+      const jamPulang = JAM_PULANG[hariIni];
+      keterangan = waktuSekarang >= jamPulang? "Pulang Tepat Waktu" : "Pulang Awal";
+      kelasCSS = waktuSekarang >= jamPulang? "tepat" : "telat";
+    }
+
+    status.className = kelasCSS;
+    status.innerHTML = `${guru.nama} <br>
+                        ${jenis === 'masuk'? 'Absen Masuk' : 'Absen Pulang'}: ${waktuSekarang} <br>
+                        Status: ${keterangan}`;
+
+    // NANTI KIRIM KE GOOGLE SHEET
+    console.log("Data Absen:", {nama: guru.nama, nip, tanggal, jenis, jam: waktuSekarang, status: keterangan});
   }
 </script>
 </body>
