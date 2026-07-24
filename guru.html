@@ -12,9 +12,10 @@
     .sub { text-align: center; color: #7f8c8d; margin-bottom: 20px; }
     
     /* LOGIN ADMIN */
-    .login-box { max-width: 400px; margin: 50px auto; padding: 30px; border: 2px solid #3498db; border-radius: 15px; }
-    .login-box input { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 2px solid #ddd; }
-    .login-box button { width: 100%; padding: 12px; background: #3498db; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
+    .login-box { max-width: 400px; margin: 50px auto; padding: 30px; border: 2px solid #3498db; border-radius: 15px; background: white; }
+    .login-box input { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 2px solid #ddd; font-size: 15px; }
+    .login-box button { width: 100%; padding: 12px; background: #3498db; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 16px; transition: 0.2s; }
+    .login-box button:hover { background: #2980b9; }
 
     /* KONTROL */
     .controls { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; align-items: center; }
@@ -31,7 +32,7 @@
     tr:nth-child(even) { background: #f9f9f9; }
     .status-tepat { color: #27ae60; font-weight: bold; }
     .status-telat { color: #c0392b; font-weight: bold; }
-    #loading { text-align: center; padding: 20px; font-size: 16px; }
+    #loading { text-align: center; padding: 20px; font-size: 16px; font-weight: bold; display: none; }
 
     /* PRINT */
     @media print {
@@ -49,11 +50,11 @@
 
     <!-- HALAMAN LOGIN ADMIN -->
     <div id="loginPage" class="login-box no-print">
-      <h3 style="text-align:center;">Login Admin</h3>
+      <h3 style="text-align:center; color:#2c3e50;">Login Admin</h3>
       <input type="text" id="adminUser" placeholder="Username Admin">
       <input type="password" id="adminPass" placeholder="Password Admin">
       <button onclick="loginAdmin()">Masuk</button>
-      <p id="loginError" style="color:red; text-align:center;"></p>
+      <p id="loginError" style="color:red; text-align:center; font-weight:bold; margin-top:10px;"></p>
     </div>
 
     <!-- HALAMAN REKAP -->
@@ -66,7 +67,7 @@
         <button class="btn-logout" onclick="logout()">Logout</button>
       </div>
       <div id="infoTanggal" style="text-align:center; font-weight:bold; margin-bottom:10px;"></div>
-      <div id="loading">Memuat data...</div>
+      <div id="loading">⏳ Memuat data dari Google Sheets...</div>
       <table id="tabelAbsen" style="display:none;">
         <thead>
           <tr>
@@ -86,33 +87,41 @@
   </div>
 
 <script>
-  https://script.google.com/macros/s/AKfycbywJ1jre0rLKXtRJgrebZBXrEUQIM0LWi5VG1DecnTLUhnY6ua5yr50hQpiEXwu2R-X/exec";
+  // PENTING: PASTIKAN URL INI ADALAH URL APLIKASI WEB GOOGLE APPS SCRIPT TERBARU ANDA
+  const URL_GOOGLE_SCRIPT = "https://google.com";
   
   const ADMIN_USER = "admin";
   const ADMIN_PASS = "kartika123";
 
-  // Set tanggal default hari ini
-  const hariIni = new Date();
-  const yyyy = hariIni.getFullYear();
-  const mm = String(hariIni.getMonth() + 1).padStart(2, '0');
-  const dd = String(hariIni.getDate()).padStart(2, '0');
-  document.getElementById('filterTanggal').value = `${yyyy}-${mm}-${dd}`;
+  // Perbaikan format waktu penanggalan agar tidak membekukan browser
+  window.onload = function() {
+    const hariIni = new Date();
+    const yyyy = hariIni.getFullYear();
+    const mm = String(hariIni.getMonth() + 1).padStart(2, '0');
+    const dd = String(hariIni.getDate()).padStart(2, '0');
+    document.getElementById('filterTanggal').value = `${yyyy}-${mm}-${dd}`;
+  };
 
   function loginAdmin() {
-    const user = document.getElementById('adminUser').value;
-    const pass = document.getElementById('adminPass').value;
+    const user = document.getElementById('adminUser').value.trim();
+    const pass = document.getElementById('adminPass').value.trim();
+    const loginError = document.getElementById('loginError');
+
     if(user === ADMIN_USER && pass === ADMIN_PASS) {
       document.getElementById('loginPage').style.display = 'none';
       document.getElementById('rekapPage').style.display = 'block';
       loadData();
     } else {
-      document.getElementById('loginError').innerText = "Username atau Password salah!";
+      loginError.innerText = "❌ Username atau Password salah!";
     }
   }
   
   function logout() {
     document.getElementById('rekapPage').style.display = 'none';
     document.getElementById('loginPage').style.display = 'block';
+    document.getElementById('adminUser').value = "";
+    document.getElementById('adminPass').value = "";
+    document.getElementById('loginError').innerText = "";
   }
 
   function cetakAbsen() {
@@ -121,30 +130,28 @@
     window.print();
   }
 
-  // Perbaikan utama penarikan data menggunakan metode integrasi JSONP agar anti-blokir CORS
   function loadData() {
     const tgl = document.getElementById('filterTanggal').value;
     document.getElementById('infoTanggal').innerText = `Data Tanggal: ${tgl}`;
     document.getElementById('loading').style.display = 'block';
     document.getElementById('tabelAbsen').style.display = 'none';
 
-    // Hapus sisa script JSONP yang lama jika ada
+    // Hapus sisa script JSONP lama jika ada
     const scriptLama = document.getElementById('jsonpScript');
     if (scriptLama) scriptLama.remove();
 
-    // Buat pemanggilan data alternatif tanpa fetch API via tag script (Metode JSONP)
+    // Integrasi penarikan data anti-blokir via tag script
     const script = document.createElement('script');
     script.id = 'jsonpScript';
     script.src = `${URL_GOOGLE_SCRIPT}?action=getData&tgl=${tgl}&callback=tampilkanTabel`;
     
     script.onerror = function() {
-      document.getElementById('loading').innerText = "Gagal memuat data. Periksa koneksi atau deployment Apps Script.";
+      document.getElementById('loading').innerText = "❌ Gagal memuat data. Periksa kembali sambungan server.";
     };
     
     document.body.appendChild(script);
   }
 
-  // Fungsi penampil tabel rekap data guru
   function tampilkanTabel(data) {
     const tbody = document.getElementById('isiTabel');
     tbody.innerHTML = "";
@@ -159,7 +166,7 @@
             <td>${row.nama || '-'}</td>
             <td>${row.nip || '-'}</td>
             <td>${row.jam || '-'}</td>
-            <td class="${row.status === 'Tepat Waktu'? 'status-tepat' : 'status-telat'}">${row.status || '-'}</td>
+            <td class="${row.status === 'Tepat Waktu' ? 'status-tepat' : 'status-telat'}">${row.status || '-'}</td>
             <td>${row.jenis || '-'}</td>
             <td>${row.hari || '-'}</td>
             <td><small>${row.lokasi || '-'}</small></td>
