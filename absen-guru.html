@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Absensi Guru SMP KARTIKA XIV</title>
+  <style>
+    body { font-family: 'Segoe UI', Arial; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px; }
+  .card { background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); width: 100%; max-width: 500px; text-align: center; }
+    h2 { color: #2c3e50; margin-bottom: 5px; }
+  .jam-info { background: #f1f8ff; padding: 15px; border-radius: 12px; margin: 15px 0; font-size: 14px; border-left: 4px solid #3498db; }
+    input { width: 100%; padding: 14px; margin: 8px 0; border-radius: 10px; border: 2px solid #ddd; font-size: 16px; box-sizing: border-box; }
+  .btn-group { display: flex; gap: 10px; margin-top: 10px; }
+    button { flex: 1; padding: 14px; border-radius: 10px; border: none; cursor: pointer; font-weight: bold; font-size: 16px; color: white; }
+   .btn-masuk { background: #27ae60; }
+   .btn-pulang { background: #e67e22; }
+    #status { margin-top: 20px; font-weight: bold; font-size: 15px; }
+  .tepat { color: #27ae60; }.telat { color: #c0392b; }.info { color: #2980b9; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>📋 Absensi Guru</h2>
+    <p><b>SMP KARTIKA XIV BANDA ACEH</b></p>
+    <div class="jam-info" id="jamInfo"></div>
+    <input type="text" id="nip" placeholder="Masukkan NIP">
+    <input type="password" id="pass" placeholder="Masukkan Password">
+    <div class="btn-group">
+      <button class="btn-masuk" onclick="absen('masuk')">Absen Masuk</button>
+      <button class="btn-pulang" onclick="absen('pulang')">Absen Pulang</button>
+    </div>
+    <div id="status"></div>
+    <br><a href="/guru.html">Lihat Rekap Data Siswa</a>
+  </div>
+
+<script>
+  // PENTING: GANTI DENGAN URL APPS SCRIPT KAMU NANTI
+  const URL_GOOGLE_SCRIPT = "https://script.google.com/macros/s/PASTE_URL_DISINI/exec";
+  
+  const LOKASI_SEKOLAH = { lat: 5.5642, lng: 95.3168 }; // SMP KARTIKA XIV
+  const RADIUS_METER = 200;
+
+  const daftarGuru = [
+    {nama: "Sabriadi,S.Pd", nip: "197705092007011016", pass: "guru12345"},
+    {nama: "Ainal Mardhiah,S.Pd", nip: "19670810198012001", pass: "guru12345"},
+    {nama: "Drs.Baihaki", nip: "196607192006041003", pass: "guru12345"},
+    {nama: "Jemi Noven,S.Pd", nip: "199111032019031006", pass: "guru12345"},
+    {nama: "Khalisna Fitri,S.Pd", nip: "123456", pass: "guru12345"},
+    {nama: "Nabila Muridha,S.Pd", nip: "1234567", pass: "guru12345"},
+    {nama: "Rina Diana,S.Pd,M.Pd", nip: "198007302006042014", pass: "guru12345"},
+    {nama: "RUZIKNA,S.Pd", nip: "12345678", pass: "guru12345"},
+    {nama: "Samsul Bahri,S.Pd", nip: "19811002200501003", pass: "guru12345"},
+    {nama: "Siti Sarah,S.Pd", nip: "123456789", pass: "guru12345"},
+    {nama: "Nanda Phonna,S.Pd", nip: "12345678910", pass: "guru12345"},
+    {nama: "Dien jauhari,S.Pd,M.Pd", nip: "12345678911", pass: "guru12345"}
+  ];
+
+  const JAM_MASUK = "07:30:00";
+  const JAM_PULANG = { 1: "13:00:00", 2: "13:00:00", 3: "13:00:00", 4: "13:00:00", 5: "11:30:00", 6: "12:00:00", 0: "Libur" };
+  const hariIni = new Date().getDay();
+  const namaHari = ["Minggu","Senin","Selasa","Rabu","Kamis","Jumat","Sabtu"];
+  document.getElementById('jamInfo').innerHTML =
+    `<b>Hari ini: ${namaHari[hariIni]}</b><br>
+     Jam Masuk: ${JAM_MASUK} | Jam Pulang: ${JAM_PULANG[hariIni]}`;
+
+  function hitungJarak(lat1, lon1, lat2, lon2) {
+    const R = 6371e3; const φ1 = lat1 * Math.PI/180; const φ2 = lat2 * Math.PI/180;
+    const Δφ = (lat2-lat1) * Math.PI/180; const Δλ = (lon2-lon1) * Math.PI/180;
+    const a = Math.sin(Δφ/2)*Math.sin(Δφ/2) + Math.cos(φ1)*Math.cos(φ2)*Math.sin(Δλ/2)*Math.sin(Δλ/2);
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  }
+
+  function absen(jenis){
+    const nip = document.getElementById('nip').value.trim();
+    const pass = document.getElementById('pass').value.trim();
+    const guru = daftarGuru.find(g => g.nip === nip && g.pass === pass);
+    const status = document.getElementById('status');
+    if(!guru){ status.innerHTML = "❌ NIP atau Password salah!"; status.className = "telat"; return; }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const jarak = hitungJarak(position.coords.latitude, position.coords.longitude, LOKASI_SEKOLAH.lat, LOKASI_SEKOLAH.lng);
+        if(jarak > RADIUS_METER){ status.innerHTML = `❌ Gagal! Anda ${Math.round(jarak)}m dari sekolah`; status.className = "telat"; return; }
+        status.innerHTML = `✅ ${guru.nama} <br> Lokasi aman: ${Math.round(jarak)}m <br> Tinggal sambungin ke Google Sheet`; 
+        status.className = "tepat";
+      },
+      () => { status.innerHTML = "❌ Aktifkan GPS"; status.className = "telat"; }
+    );
+  }
+</script>
+</body>
+</html>
