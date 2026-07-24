@@ -34,7 +34,6 @@
     .status-telat { color: #c0392b; font-weight: bold; }
     #loading { text-align: center; padding: 20px; font-size: 16px; font-weight: bold; display: none; }
 
-    /* PRINT */
     @media print {
       body { background: white; padding: 0; }
       .no-print { display: none; }
@@ -87,7 +86,7 @@
   </div>
 
 <script>
-  // PENTING: Pastikan URL ini sudah sesuai dengan URL webapp Apps Script /exec milik Anda
+  // Hubungkan ke URL eksekusi Web App Google Script Anda
   const URL_GOOGLE_SCRIPT = "https://google.com";
   
   const ADMIN_USER = "admin";
@@ -129,28 +128,26 @@
     window.print();
   }
 
-  // Merombak fungsi loadData menggunakan sistem Fetch API untuk sinkronisasi format JSON data mentah
-  async function loadData() {
+  // Menggunakan injeksi tag Script dinamis (JSONP) agar kebal dari pemblokiran CORS browser luar
+  function loadData() {
     const tgl = document.getElementById('filterTanggal').value;
     document.getElementById('infoTanggal').innerText = `Data Tanggal: ${tgl}`;
-    
-    const loadingDiv = document.getElementById('loading');
-    const tabelAbsen = document.getElementById('tabelAbsen');
-    
-    loadingDiv.innerText = "⏳ Memuat data dari Google Sheets...";
-    loadingDiv.style.display = 'block';
-    tabelAbsen.style.display = 'none';
+    document.getElementById('loading').style.display = 'block';
+    document.getElementById('tabelAbsen').style.display = 'none';
 
-    try {
-      // Pemanggilan langsung ke Google Apps Script tanpa pembungkus callback JSONP script tag
-      const respon = await fetch(`${URL_GOOGLE_SCRIPT}?action=getData&tgl=${tgl}`);
-      const dataJson = await respon.json();
-      
-      tampilkanTabel(dataJson);
-      
-    } catch (error) {
-      loadingDiv.innerText = "❌ Gagal memuat data. Periksa kembali sambungan server atau deploy versi baru.";
-    }
+    const scriptLama = document.getElementById('jsonpScript');
+    if (scriptLama) scriptLama.remove();
+
+    const script = document.createElement('script');
+    script.id = 'jsonpScript';
+    // Menembak data secara aman melalui parameter callback penembus CORS
+    script.src = `${URL_GOOGLE_SCRIPT}?tgl=${tgl}&callback=tampilkanTabel`;
+    
+    script.onerror = function() {
+      document.getElementById('loading').innerText = "❌ Jalur koneksi diblokir. Harap verifikasi pembaruan URL Script.";
+    };
+    
+    document.body.appendChild(script);
   }
 
   function tampilkanTabel(data) {
