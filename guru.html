@@ -86,7 +86,7 @@
   </div>
 
 <script>
-  // Hubungkan ke URL eksekusi Web App Google Script Anda
+  // PENTING: Ganti URL di bawah ini dengan URL eksekusi Web App Google Script (/exec) milik Anda yang paling baru
   const URL_GOOGLE_SCRIPT = "https://google.com";
   
   const ADMIN_USER = "admin";
@@ -128,26 +128,33 @@
     window.print();
   }
 
-  // Menggunakan injeksi tag Script dinamis (JSONP) agar kebal dari pemblokiran CORS browser luar
-  function loadData() {
+  // Menggunakan Jembatan Proxy API Tanpa Blokir untuk menjebol keamanan CORS Browser lintas domain
+  async function loadData() {
     const tgl = document.getElementById('filterTanggal').value;
     document.getElementById('infoTanggal').innerText = `Data Tanggal: ${tgl}`;
-    document.getElementById('loading').style.display = 'block';
-    document.getElementById('tabelAbsen').style.display = 'none';
-
-    const scriptLama = document.getElementById('jsonpScript');
-    if (scriptLama) scriptLama.remove();
-
-    const script = document.createElement('script');
-    script.id = 'jsonpScript';
-    // Menembak data secara aman melalui parameter callback penembus CORS
-    script.src = `${URL_GOOGLE_SCRIPT}?tgl=${tgl}&callback=tampilkanTabel`;
     
-    script.onerror = function() {
-      document.getElementById('loading').innerText = "❌ Jalur koneksi diblokir. Harap verifikasi pembaruan URL Script.";
-    };
+    const loadingText = document.getElementById('loading');
+    const tabelAbsen = document.getElementById('tabelAbsen');
     
-    document.body.appendChild(script);
+    loadingText.style.display = 'block';
+    loadingText.innerText = "⏳ Memuat data dari Google Sheets...";
+    tabelAbsen.style.display = 'none';
+
+    // Jembatan bypass CORS via Allorigins proxy API
+    const proxyUrl = `https://allorigins.win{encodeURIComponent(URL_GOOGLE_SCRIPT + '?tgl=' + tgl)}`;
+
+    try {
+      const respon = await fetch(proxyUrl);
+      if (!respon.ok) throw new Error("Network error");
+      
+      const dataMentah = await respon.json();
+      // Mengubah string kiriman balik dari proxy menjadi format Objek JSON Asli
+      const dataJson = JSON.parse(dataMentah.contents);
+      
+      tampilkanTabel(dataJson);
+    } catch (error) {
+      loadingText.innerText = "❌ Jalur koneksi diblokir. Harap pastikan kembali URL script Anda benar dan sudah dideploy ulang.";
+    }
   }
 
   function tampilkanTabel(data) {
