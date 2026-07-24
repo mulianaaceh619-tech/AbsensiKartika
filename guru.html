@@ -87,13 +87,12 @@
   </div>
 
 <script>
-  // PENTING: PASTIKAN URL INI ADALAH URL APLIKASI WEB GOOGLE APPS SCRIPT TERBARU ANDA
-  const URL_GOOGLE_SCRIPT = "https://script.google.com/macros/s/AKfycbywJ1jre0rLKXtRJgrebZBXrEUQIM0LWi5VG1DecnTLUhnY6ua5yr50hQpiEXwu2R-X/exec";
+  // PENTING: Pastikan URL ini sudah sesuai dengan URL webapp Apps Script /exec milik Anda
+  const URL_GOOGLE_SCRIPT = "https://google.com";
   
   const ADMIN_USER = "admin";
   const ADMIN_PASS = "kartika123";
 
-  // Perbaikan format waktu penanggalan agar tidak membekukan browser
   window.onload = function() {
     const hariIni = new Date();
     const yyyy = hariIni.getFullYear();
@@ -130,26 +129,28 @@
     window.print();
   }
 
-  function loadData() {
+  // Merombak fungsi loadData menggunakan sistem Fetch API untuk sinkronisasi format JSON data mentah
+  async function loadData() {
     const tgl = document.getElementById('filterTanggal').value;
     document.getElementById('infoTanggal').innerText = `Data Tanggal: ${tgl}`;
-    document.getElementById('loading').style.display = 'block';
-    document.getElementById('tabelAbsen').style.display = 'none';
-
-    // Hapus sisa script JSONP lama jika ada
-    const scriptLama = document.getElementById('jsonpScript');
-    if (scriptLama) scriptLama.remove();
-
-    // Integrasi penarikan data anti-blokir via tag script
-    const script = document.createElement('script');
-    script.id = 'jsonpScript';
-    script.src = `${URL_GOOGLE_SCRIPT}?action=getData&tgl=${tgl}&callback=tampilkanTabel`;
     
-    script.onerror = function() {
-      document.getElementById('loading').innerText = "❌ Gagal memuat data. Periksa kembali sambungan server.";
-    };
+    const loadingDiv = document.getElementById('loading');
+    const tabelAbsen = document.getElementById('tabelAbsen');
     
-    document.body.appendChild(script);
+    loadingDiv.innerText = "⏳ Memuat data dari Google Sheets...";
+    loadingDiv.style.display = 'block';
+    tabelAbsen.style.display = 'none';
+
+    try {
+      // Pemanggilan langsung ke Google Apps Script tanpa pembungkus callback JSONP script tag
+      const respon = await fetch(`${URL_GOOGLE_SCRIPT}?action=getData&tgl=${tgl}`);
+      const dataJson = await respon.json();
+      
+      tampilkanTabel(dataJson);
+      
+    } catch (error) {
+      loadingDiv.innerText = "❌ Gagal memuat data. Periksa kembali sambungan server atau deploy versi baru.";
+    }
   }
 
   function tampilkanTabel(data) {
@@ -166,7 +167,7 @@
             <td>${row.nama || '-'}</td>
             <td>${row.nip || '-'}</td>
             <td>${row.jam || '-'}</td>
-            <td class="${row.status === 'Tepat Waktu' ? 'status-tepat' : 'status-telat'}">${row.status || '-'}</td>
+            <td class="${row.status === 'Tepat Waktu' || row.status === 'Pulang' ? 'status-tepat' : 'status-telat'}">${row.status || '-'}</td>
             <td>${row.jenis || '-'}</td>
             <td>${row.hari || '-'}</td>
             <td><small>${row.lokasi || '-'}</small></td>
