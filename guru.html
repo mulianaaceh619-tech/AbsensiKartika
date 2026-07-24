@@ -7,37 +7,37 @@
   <style>
     * { box-sizing: border-box; }
     body { font-family: 'Segoe UI', Arial; background: #f4f7f9; margin: 0; padding: 20px; }
-   .container { max-width: 1100px; margin: auto; background: white; padding: 25px; border-radius: 15px; box-shadow: 0 5px 20px rgba(0,0,0,0.1); }
+    .container { max-width: 1100px; margin: auto; background: white; padding: 25px; border-radius: 15px; box-shadow: 0 5px 20px rgba(0,0,0,0.1); }
     h2 { text-align: center; color: #2c3e50; margin-bottom: 5px; }
-   .sub { text-align: center; color: #7f8c8d; margin-bottom: 20px; }
+    .sub { text-align: center; color: #7f8c8d; margin-bottom: 20px; }
     
     /* LOGIN ADMIN */
-   .login-box { max-width: 400px; margin: 50px auto; padding: 30px; border: 2px solid #3498db; border-radius: 15px; }
-   .login-box input { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 2px solid #ddd; }
-   .login-box button { width: 100%; padding: 12px; background: #3498db; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
+    .login-box { max-width: 400px; margin: 50px auto; padding: 30px; border: 2px solid #3498db; border-radius: 15px; }
+    .login-box input { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 2px solid #ddd; }
+    .login-box button { width: 100%; padding: 12px; background: #3498db; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
 
     /* KONTROL */
-   .controls { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; align-items: center; }
-   .controls input[type="date"] { padding: 10px; border-radius: 8px; border: 2px solid #ddd; }
-   .controls button { padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; color: white; }
-   .btn-cetak { background: #27ae60; }
-   .btn-refresh { background: #3498db; }
-   .btn-logout { background: #c0392b; margin-left: auto; }
+    .controls { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; align-items: center; }
+    .controls input[type="date"] { padding: 10px; border-radius: 8px; border: 2px solid #ddd; }
+    .controls button { padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; color: white; }
+    .btn-cetak { background: #27ae60; }
+    .btn-refresh { background: #3498db; }
+    .btn-logout { background: #c0392b; margin-left: auto; }
 
     /* TABEL */
     table { width: 100%; border-collapse: collapse; margin-top: 10px; }
     th, td { border: 1px solid #ddd; padding: 10px; text-align: center; font-size: 14px; }
     th { background: #3498db; color: white; }
     tr:nth-child(even) { background: #f9f9f9; }
-   .status-tepat { color: #27ae60; font-weight: bold; }
-   .status-telat { color: #c0392b; font-weight: bold; }
+    .status-tepat { color: #27ae60; font-weight: bold; }
+    .status-telat { color: #c0392b; font-weight: bold; }
     #loading { text-align: center; padding: 20px; font-size: 16px; }
 
     /* PRINT */
     @media print {
       body { background: white; padding: 0; }
-     .no-print { display: none; }
-     .container { box-shadow: none; border: none; }
+      .no-print { display: none; }
+      .container { box-shadow: none; border: none; }
       h2 { font-size: 18pt; }
     }
   </style>
@@ -73,10 +73,11 @@
             <th>No</th>
             <th>Nama Guru</th>
             <th>NIP</th>
-            <th>Jam Masuk</th>
-            <th>Status Masuk</th>
-            <th>Jam Pulang</th>
-            <th>Status Pulang</th>
+            <th>Jam Absen</th>
+            <th>Status</th>
+            <th>Jenis Absen</th>
+            <th>Hari</th>
+            <th>Koordinat Lokasi</th>
           </tr>
         </thead>
         <tbody id="isiTabel"></tbody>
@@ -85,15 +86,17 @@
   </div>
 
 <script>
-  // 1. GANTI INI DENGAN URL APPS SCRIPT KAMU
-  const URL_GOOGLE_SCRIPT = "https://script.google.com/macros/s/AKfycbxdk-4VDyGAjmIr6L7Dxfb0SAl09-_-hYsHEK7zrTdVODk1Ma5RdjphWNTdaJyKtHAH/exec";
+  const URL_GOOGLE_SCRIPT = "https://google.com";
   
-  // 2. GANTI USERNAME + PASSWORD ADMIN
   const ADMIN_USER = "admin";
   const ADMIN_PASS = "kartika123";
 
-  // Auto set tanggal hari ini
-  document.getElementById('filterTanggal').valueAsDate = new Date();
+  // Set tanggal default hari ini
+  const hariIni = new Date();
+  const yyyy = hariIni.getFullYear();
+  const mm = String(hariIni.getMonth() + 1).padStart(2, '0');
+  const dd = String(hariIni.getDate()).padStart(2, '0');
+  document.getElementById('filterTanggal').value = `${yyyy}-${mm}-${dd}`;
 
   function loginAdmin() {
     const user = document.getElementById('adminUser').value;
@@ -118,37 +121,48 @@
     window.print();
   }
 
-  async function loadData() {
+  // Perbaikan utama penarikan data menggunakan metode integrasi JSONP agar anti-blokir CORS
+  function loadData() {
     const tgl = document.getElementById('filterTanggal').value;
     document.getElementById('infoTanggal').innerText = `Data Tanggal: ${tgl}`;
     document.getElementById('loading').style.display = 'block';
     document.getElementById('tabelAbsen').style.display = 'none';
 
-    try {
-      const res = await fetch(`${URL_GOOGLE_SCRIPT}?action=getData&tgl=${tgl}`);
-      const data = await res.json();
-      tampilkanTabel(data);
-    } catch(err) {
-      document.getElementById('loading').innerText = "Gagal memuat data. Cek URL Apps Script";
-    }
+    // Hapus sisa script JSONP yang lama jika ada
+    const scriptLama = document.getElementById('jsonpScript');
+    if (scriptLama) scriptLama.remove();
+
+    // Buat pemanggilan data alternatif tanpa fetch API via tag script (Metode JSONP)
+    const script = document.createElement('script');
+    script.id = 'jsonpScript';
+    script.src = `${URL_GOOGLE_SCRIPT}?action=getData&tgl=${tgl}&callback=tampilkanTabel`;
+    
+    script.onerror = function() {
+      document.getElementById('loading').innerText = "Gagal memuat data. Periksa koneksi atau deployment Apps Script.";
+    };
+    
+    document.body.appendChild(script);
   }
 
+  // Fungsi penampil tabel rekap data guru
   function tampilkanTabel(data) {
     const tbody = document.getElementById('isiTabel');
     tbody.innerHTML = "";
-    if(data.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="7">Tidak ada data absen di tanggal ini</td></tr>`;
+    
+    if(!data || data.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="8">Tidak ada data absen di tanggal ini</td></tr>`;
     } else {
       data.forEach((row, i) => {
         tbody.innerHTML += `
           <tr>
             <td>${i+1}</td>
-            <td>${row.nama}</td>
-            <td>${row.nip}</td>
-            <td>${row.jam_masuk || '-'}</td>
-            <td class="${row.status_masuk === 'Tepat Waktu'? 'status-tepat' : 'status-telat'}">${row.status_masuk || '-'}</td>
-            <td>${row.jam_pulang || '-'}</td>
-            <td class="${row.status_pulang === 'Tepat Waktu'? 'status-tepat' : 'status-telat'}">${row.status_pulang || '-'}</td>
+            <td>${row.nama || '-'}</td>
+            <td>${row.nip || '-'}</td>
+            <td>${row.jam || '-'}</td>
+            <td class="${row.status === 'Tepat Waktu'? 'status-tepat' : 'status-telat'}">${row.status || '-'}</td>
+            <td>${row.jenis || '-'}</td>
+            <td>${row.hari || '-'}</td>
+            <td><small>${row.lokasi || '-'}</small></td>
           </tr>
         `;
       });
