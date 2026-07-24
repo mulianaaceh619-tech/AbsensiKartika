@@ -5,40 +5,45 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Absensi Guru SMP KARTIKA XIV</title>
   <style>
-    body { font-family: 'Segoe UI', Arial; background: #eef2f7; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px; }
-   .card { background: white; padding: 30px; border-radius: 16px; box-shadow: 0 6px 20px rgba(0,0,0,0.1); width: 100%; max-width: 500px; text-align: center; }
+    body { font-family: 'Segoe UI', Arial; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px; }
+  .card { background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); width: 100%; max-width: 500px; text-align: center; }
     h2 { color: #2c3e50; margin-bottom: 5px; }
-   .jam-info { background: #ecf0f1; padding: 12px; border-radius: 10px; margin: 15px 0; font-size: 14px; }
-    input, button { width: 100%; padding: 14px; margin: 8px 0; border-radius: 10px; border: 1px solid #ccc; font-size: 16px; box-sizing: border-box; }
-    button { background: #27ae60; color: white; border: none; cursor: pointer; font-weight: bold; }
-    button.pulang { background: #e67e22; }
+  .jam-info { background: #f1f8ff; padding: 15px; border-radius: 12px; margin: 15px 0; font-size: 14px; border-left: 4px solid #3498db; }
+    input { width: 100%; padding: 14px; margin: 8px 0; border-radius: 10px; border: 2px solid #ddd; font-size: 16px; box-sizing: border-box; }
+    input:focus { border-color: #3498db; outline: none; }
+  .btn-group { display: flex; gap: 10px; margin-top: 10px; }
+    button { flex: 1; padding: 14px; border-radius: 10px; border: none; cursor: pointer; font-weight: bold; font-size: 16px; color: white; }
+   .btn-masuk { background: #27ae60; }
+   .btn-pulang { background: #e67e22; }
     button:disabled { background: #bdc3c7; cursor: not-allowed; }
-    #status { margin-top: 15px; font-weight: bold; font-size: 15px; line-height: 1.6; }
-   .tepat { color: #27ae60; }.telat { color: #c0392b; }.info { color: #2980b9; }
-   .loading { display: none; }
+    #status { margin-top: 20px; font-weight: bold; font-size: 15px; line-height: 1.6; min-height: 50px; }
+  .tepat { color: #27ae60; }.telat { color: #c0392b; }.info { color: #2980b9; }
+  .loading { display: none; color: #3498db; }
   </style>
 </head>
 <body>
   <div class="card">
-    <h2>Absensi Guru</h2>
-    <p>SMP KARTIKA XIV BANDA ACEH</p>
+    <h2>📋 Absensi Guru</h2>
+    <p><b>SMP KARTIKA XIV BANDA ACEH</b></p>
     <div class="jam-info" id="jamInfo"></div>
     <input type="text" id="nip" placeholder="Masukkan NIP">
     <input type="password" id="pass" placeholder="Masukkan Password">
-    <button id="btnMasuk" onclick="absen('masuk')">Absen Masuk</button>
-    <button id="btnPulang" class="pulang" onclick="absen('pulang')">Absen Pulang</button>
-    <p class="loading" id="loading">Mengecek lokasi & mengirim data...</p>
+    <div class="btn-group">
+      <button class="btn-masuk" onclick="absen('masuk')">Absen Masuk</button>
+      <button class="btn-pulang" onclick="absen('pulang')">Absen Pulang</button>
+    </div>
+    <p class="loading" id="loading">⏳ Mengecek lokasi & mengirim data...</p>
     <div id="status"></div>
     <br><a href="/guru.html">Lihat Rekap Data Siswa</a>
   </div>
 
 <script>
-  // 1. GANTI DENGAN URL GOOGLE APPS SCRIPT KAMU NANTI
+  // PENTING: GANTI INI DENGAN URL GOOGLE APPS SCRIPT KAMU
   const URL_GOOGLE_SCRIPT = "https://script.google.com/macros/s/PASTE_URL_DISINI/exec";
 
-  // 2. KOORDINAT SMP KARTIKA XIV
+  // KOORDINAT SMP KARTIKA XIV BANDA ACEH
   const LOKASI_SEKOLAH = { lat: 5.5642, lng: 95.3168 };
-  const RADIUS_METER = 200; // 200 meter
+  const RADIUS_METER = 200; // Radius 200 meter
 
   const daftarGuru = [
     {nama: "Sabriadi,S.Pd", nip: "197705092007011016", pass: "guru12345"},
@@ -55,14 +60,17 @@
     {nama: "Dien jauhari,S.Pd,M.Pd", nip: "12345678911", pass: "guru12345"}
   ];
 
+  // ATURAN JAM
   const JAM_MASUK = "07:30:00";
-  const JAM_PULANG = { 1: "13:00:00", 2: "13:00:00", 3: "13:00:00", 4: "13:00:00", 5: "11:30:00", 6: "12:00:00" };
+  const JAM_PULANG = { 1: "13:00:00", 2: "13:00:00", 3: "13:00:00", 4: "13:00:00", 5: "11:30:00", 6: "12:00:00", 0: "Libur" };
   const hariIni = new Date().getDay();
   const namaHari = ["Minggu","Senin","Selasa","Rabu","Kamis","Jumat","Sabtu"];
+
   document.getElementById('jamInfo').innerHTML =
     `<b>Hari ini: ${namaHari[hariIni]}</b><br>
-     Masuk: ${JAM_MASUK} | Pulang: ${JAM_PULANG[hariIni] || 'Libur'}`;
+     Jam Masuk: ${JAM_MASUK} | Jam Pulang: ${JAM_PULANG[hariIni]}`;
 
+  // FUNGSI HITUNG JARAK GPS
   function hitungJarak(lat1, lon1, lat2, lon2) {
     const R = 6371e3; const φ1 = lat1 * Math.PI/180; const φ2 = lat2 * Math.PI/180;
     const Δφ = (lat2-lat1) * Math.PI/180; const Δλ = (lon2-lon1) * Math.PI/180;
@@ -77,7 +85,7 @@
     const status = document.getElementById('status');
     const loading = document.getElementById('loading');
 
-    if(!guru){ status.innerHTML = "NIP atau Password salah!"; status.className = "telat"; return; }
+    if(!guru){ status.innerHTML = "❌ NIP atau Password salah!"; status.className = "telat"; return; }
 
     loading.style.display = 'block';
     status.innerHTML = "";
@@ -90,7 +98,7 @@
 
         if(jarak > RADIUS_METER){
           loading.style.display = 'none';
-          status.innerHTML = `Gagal! Anda berada ${Math.round(jarak)}m dari sekolah. Wajib di area sekolah.`;
+          status.innerHTML = `❌ Gagal! Anda berada ${Math.round(jarak)}m dari sekolah. Wajib di area sekolah.`;
           status.className = "telat";
           return;
         }
@@ -98,43 +106,44 @@
         const sekarang = new Date();
         const waktuSekarang = sekarang.toLocaleTimeString("id-ID", {hour12: false});
         const tanggal = sekarang.toLocaleDateString("id-ID");
-        let keterangan = ""; let kelasCSS = "info";
+        let keterangan = ""; let kelasCSS = "info"; let emoji = "";
 
         if(jenis === 'masuk'){
-          keterangan = waktuSekarang <= JAM_MASUK? "Hadir Tepat Waktu" : "Terlambat Masuk";
-          kelasCSS = waktuSekarang <= JAM_MASUK? "tepat" : "telat";
+          if(waktuSekarang <= JAM_MASUK){ keterangan = "Hadir Tepat Waktu"; kelasCSS = "tepat"; emoji = "✅"; }
+          else { keterangan = "Terlambat Masuk"; kelasCSS = "telat"; emoji = "⚠️"; }
         } else {
           const jamPulang = JAM_PULANG[hariIni];
-          keterangan = waktuSekarang >= jamPulang? "Pulang Tepat Waktu" : "Pulang Awal";
-          kelasCSS = waktuSekarang >= jamPulang? "tepat" : "telat";
+          if(waktuSekarang >= jamPulang){ keterangan = "Pulang Tepat Waktu"; kelasCSS = "tepat"; emoji = "✅"; }
+          else { keterangan = "Pulang Awal"; kelasCSS = "telat"; emoji = "⚠️"; }
         }
 
         const dataKirim = {nama: guru.nama, nip, tanggal, hari: namaHari[hariIni], jenis, jam: waktuSekarang, status: keterangan, lokasi: `${latUser},${lngUser}`};
 
-        kirimKeSheet(dataKirim, status, kelasCSS, loading);
+        kirimKeSheet(dataKirim, status, kelasCSS, emoji, loading);
       },
       () => {
         loading.style.display = 'none';
-        status.innerHTML = "Gagal! Aktifkan GPS dan Izinkan akses lokasi";
+        status.innerHTML = "❌ Gagal! Aktifkan GPS dan Izinkan akses lokasi";
         status.className = "telat";
-      }
+      },
+      { enableHighAccuracy: true } // Biar GPS lebih akurat
     );
   }
 
-  function kirimKeSheet(data, statusEl, kelas, loadingEl){
+  function kirimKeSheet(data, statusEl, kelas, emoji, loadingEl){
     fetch(URL_GOOGLE_SCRIPT, {
       method: "POST",
       body: JSON.stringify(data)
     })
-   .then(res => res.json())
-   .then(res => {
+  .then(res => res.json())
+  .then(res => {
       loadingEl.style.display = 'none';
       statusEl.className = kelas;
-      statusEl.innerHTML = `${data.nama} <br> ${data.jenis === 'masuk'? 'Absen Masuk' : 'Absen Pulang'}: ${data.jam} <br> Status: ${data.status} <br> Data tersimpan ✓`;
+      statusEl.innerHTML = `${emoji} ${data.nama} <br> ${data.jenis === 'masuk'? 'Absen Masuk' : 'Absen Pulang'}: ${data.jam} <br> Status: ${data.status} <br> Jarak: ${Math.round(hitungJarak(data.lokasi.split(',')[0], data.lokasi.split(',')[1], LOKASI_SEKOLAH.lat, LOKASI_SEKOLAH.lng))}m <br> Data tersimpan ke Google Sheet ✓`;
     })
-   .catch(err => {
+  .catch(err => {
       loadingEl.style.display = 'none';
-      statusEl.innerHTML = "Gagal kirim ke server. Cek internet.";
+      statusEl.innerHTML = "❌ Gagal kirim ke server. Cek koneksi internet.";
       statusEl.className = "telat";
     });
   }
