@@ -38,6 +38,7 @@
   </div>
 
 <script>
+  // URL Aplikasi Web Google Apps Script Terbaru Anda
   const URL_GOOGLE_SCRIPT = "https://google.com";
   
   // DATABASE GURU YANG SUDAH DIPERBAIKI SAMA PERSIS DENGAN GOOGLE SHEETS ANDA
@@ -109,37 +110,38 @@
     const yyyy = sekarang.getFullYear();
     const mm = String(sekarang.getMonth() + 1).padStart(2, '0');
     const dd = String(sekarang.getDate()).padStart(2, '0');
-    const jamFormat = `${String(sekarang.getHours()).padStart(2, '0')}:${String(sekarang.getMinutes()).padStart(2, '0')}:${String(sekarang.getSeconds()).padStart(2, '0')}`;
     
-    let statusMasukAtauPulang = "-";
-    if(jenis === 'masuk') {
-      const waktuSekarangMenit = (sekarang.getHours() * 60) + sekarang.getMinutes();
-      const batasMasukMenit = (7 * 60) + 30; 
-      statusMasukAtauPulang = waktuSekarangMenit > batasMasukMenit ? "Terlambat" : "Tepat Waktu";
-    } else {
-      statusMasukAtauPulang = "Pulang";
-    }
+    // Memberi tanda petik tunggal di depan jam murni teks agar Google Sheets tidak mengubahnya jadi tanggal 1899
+    const jamFormat = `'${String(sekarang.getHours()).padStart(2, '0')}:${String(sekarang.getMinutes()).padStart(2, '0')}:${String(sekarang.getSeconds()).padStart(2, '0')}`;
     
     const payload = {
       tanggal: `${yyyy}-${mm}-${dd}`,
       nama: guru.nama,
       nip: guru.nip,
       jam: jamFormat,
-      status: statusMasukAtauPulang,
+      status: "-", // Status dihitung & diisi otomatis oleh server doPost Apps Script
       jenis: jenis,
       hari: namaHari[hariIni],
+      hari_angka: hariIni,
       lokasi: lat === 0 ? "0, 0 (GPS Offline)" : `${lat.toFixed(6)}, ${lng.toFixed(6)}`
     };
 
     try {
+      // Konversi paket data ke urlencoded form body agar kompatibel penuh dengan Apps Script dan anti-CORS
+      const formBody = new URLSearchParams();
+      for (const key in payload) {
+        formBody.append(key, payload[key]);
+      }
+
       await fetch(URL_GOOGLE_SCRIPT, {
         method: "POST",
         mode: "no-cors", 
-        headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body: JSON.stringify(payload)
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: formBody.toString()
       });
       
-      status.innerHTML = `✅ Berhasil Absen ${jenis === 'masuk' ? 'Masuk' : 'Pulang'}<br>Selamat Bertugas, <b>${guru.nama}</b>!<br><small>Status: ${statusMasukAtauPulang} (${jamFormat})</small>`;
+      const jamTampilan = jamFormat.replace("'", "");
+      status.innerHTML = `✅ Berhasil Absen ${jenis === 'masuk' ? 'Masuk' : 'Pulang'}<br>Selamat Bertugas, <b>${guru.nama}</b>!<br><small>Jam Catat: ${jamTampilan}</small>`;
       status.className = "tepat";
       
     } catch (error) {
