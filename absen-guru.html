@@ -38,9 +38,9 @@
   </div>
 
 <script>
-  // PASTIKAN URL INI ADALAH URL APLIKASI WEB TERBARU ANDA YANG BERAKHIRAN /exec
-  const URL_GOOGLE_SCRIPT = "https://script.google.com/macros/s/AKfycbywJ1jre0rLKXtRJgrebZBXrEUQIM0LWi5VG1DecnTLUhnY6ua5yr50hQpiEXwu2R-X/exec";
+  const URL_GOOGLE_SCRIPT = "https://google.com";
   
+  // DATABASE GURU YANG SUDAH DIPERBAIKI SAMA PERSIS DENGAN GOOGLE SHEETS ANDA
   const daftarGuru = [
     {nama: "Sabriadi,S.Pd", nip: "197705092007011016"},
     {nama: "Ainal Mardhiah,S.Pd", nip: "19670810198012001"},
@@ -94,7 +94,6 @@
         prosesKirimData(position.coords.latitude, position.coords.longitude, guru, jenis);
       },
       async () => { 
-        // Backup Offline jika GPS mati
         prosesKirimData(0, 0, guru, jenis);
       },
       { enableHighAccuracy: true, timeout: 5000 }
@@ -133,7 +132,6 @@
     };
 
     try {
-      // PERBAIKAN: Mengirim format Text Plain untuk menghindari macet CORS browser
       await fetch(URL_GOOGLE_SCRIPT, {
         method: "POST",
         mode: "no-cors", 
