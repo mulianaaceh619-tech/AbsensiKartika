@@ -67,27 +67,42 @@ function ambilData() {
 }
 
 function tampilkanTabel(data) {
+  document.getElementById('loading').style.display = 'none';
   const tbody = document.getElementById('isiTabel');
   tbody.innerHTML = "";
+
   if(!data || data.length === 0) {
     tbody.innerHTML = `<tr><td colspan="8">Tidak ada data absen di tanggal ini</td></tr>`;
   } else {
     data.forEach((row, i) => {
-      // BUANG 1899
-      let jamBersih = String(row.jam).split(" ")[4] || String(row.jam);
-      if(jamBersih.length > 8) jamBersih = jamBersih.substring(0,8) + " WIB";
+      // INI KUNCI ANTI 1899: JANGAN DIJADIKAN DATE
+      let jamMentah = String(row.jam);
+      
+      // Kalau isinya "13:03:00" atau "1899-12-30T13:03:00" kita ambil 13:03:00 nya aja
+      let jamBersih = jamMentah.match(/\d{2}:\d{2}:\d{2}/);
+      jamBersih = jamBersih? jamBersih[0] + " WIB" : jamMentah + " WIB";
 
-      const tglObj = new Date(row.tanggal);
-      const hari = NAMA_HARI[tglObj.getDay()];
-      const tglIndo = `${tglObj.getDate()} + NAMA_BULAN[tglObj.getMonth()] + " + tglObj.getFullYear()`;
+      // Ambil tanggal dari row.tanggal bukan dari jam
+      let tgl = new Date(row.tanggal);
+      let hari = ["Minggu","Senin","Selasa","Rabu","Kamis","Jumat","Sabtu"][tgl.getDay()];
 
       const kelas = (row.status.toLowerCase().includes('tepat') || row.jenis.toLowerCase() === 'pulang')? 'status-tepat' : 'status-telat';
-      tbody.innerHTML += `<tr><td>${i+1}</td><td>${row.nama}</td><td>${row.nip}</td><td><b>${jamBersih}</b></td><td class="${kelas}">${row.status}</td><td>${row.jenis}</td><td>${hari}</td><td><small>${row.lokasi}</small></td></tr>`;
+      
+      tbody.innerHTML += `
+        <tr>
+          <td>${i+1}</td>
+          <td>${row.nama}</td>
+          <td>${row.nip}</td>
+          <td><b>${jamBersih}</b></td> 
+          <td class="${kelas}">${row.status}</td>
+          <td>${row.jenis}</td>
+          <td>${hari}</td>
+          <td><small>${row.lokasi}</small></td>
+        </tr>`;
     });
   }
   document.getElementById('tabelAbsen').style.display = 'table';
 }
-function logout(){ window.location.href = 'index.html'; }
 </script>
 </body>
 </html>
