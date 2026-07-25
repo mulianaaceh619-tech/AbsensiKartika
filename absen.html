@@ -1,0 +1,23 @@
+<!DOCTYPE html><html lang="id"><head><meta charset="UTF-8"><title>Absensi Guru</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>body{font-family:Arial;background:#f4f6f8;padding:20px;text-align:center}
+.card{background:white;max-width:400px;margin:auto;padding:20px;border-radius:10px}
+input{width:90%;padding:10px;margin:8px 0;border:1px solid #ddd;border-radius:5px}
+button{width:95%;padding:12px;margin:8px 0;border:none;border-radius:5px;color:white;font-size:16px;cursor:pointer}
+.masuk{background:#27ae60}.pulang{background:#c0392b}</style></head>
+<body><div class="card"><h2>ABSENSI GURU</h2><p>SMP KARTIKA XIV</p>
+<input type="text" id="nama" placeholder="Nama Lengkap"><input type="text" id="nip" placeholder="NIP">
+<button class="masuk" onclick="kirim('Masuk')">HADIR MASUK</button>
+<button class="pulang" onclick="kirim('Pulang')">HADIR PULANG</button>
+<p id="pesan"></p></div>
+<script>
+const URL_SCRIPT = "PASTE_URL_SCRIPT_KAMU_DISINI";
+function kirim(jenis){
+  const nama=document.getElementById('nama').value; const nip=document.getElementById('nip').value;
+  if(!nama||!nip){alert("Isi Nama dan NIP");return;}
+  navigator.geolocation.getCurrentPosition(pos=>{
+    fetch(URL_SCRIPT,{method:"POST",body:JSON.stringify({nama:nama,nip:nip,jenis:jenis,lokasi:pos.coords.latitude+","+pos.coords.longitude})})
+   .then(r=>r.json()).then(d=>{document.getElementById('pesan').innerText="Berhasil Absen "+jenis+" Jam "+new Date().toLocaleTimeString('id-ID')});
+  },()=>{alert("Izinkan lokasi dulu")});
+}
+</script></body></html>
