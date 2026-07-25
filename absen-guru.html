@@ -34,14 +34,13 @@
       <button id="btnPulang" class="btn-pulang" onclick="absen('pulang')">Absen Pulang</button>
     </div>
     <div id="status"></div>
-    <br><a class="rekap-link" href="/guru.html">Lihat Rekap Data Siswa</a>
+    <br><a class="rekap-link" href="guru.html">Lihat Rekap Data Guru</a>
   </div>
 
 <script>
-  // URL Aplikasi Web Google Apps Script Terbaru Anda
-  const URL_GOOGLE_SCRIPT = "https://script.google.com/macros/s/AKfycbywJ1jre0rLKXtRJgrebZBXrEUQIM0LWi5VG1DecnTLUhnY6ua5yr50hQpiEXwu2R-X/exec";
+  // === PENTING: SAMAKAN URL INI DENGAN YANG DI guru.html ===
+  const URL_GOOGLE_SCRIPT = "https://script.google.com/macros/s/AKfycbxuEthR7Zw4S4_NPw5y8g9HyO9mSZUimXi47UE5advSbsdWlE-SJJNVMoavZYJeZUyQ/exec";
   
-  // DATABASE GURU YANG SUDAH DIPERBAIKI SAMA PERSIS DENGAN GOOGLE SHEETS ANDA
   const daftarGuru = [
     {nama: "Sabriadi,S.Pd", nip: "197705092007011016"},
     {nama: "Ainal Mardhiah,S.Pd", nip: "19670810198012001"},
@@ -84,19 +83,14 @@
     }
 
     localStorage.setItem('nipLogin', nip); 
-
     status.innerHTML = "⏳ Menghubungkan jaringan server...";
     status.className = "info";
     btnMasuk.disabled = true;
     btnPulang.disabled = true;
 
     navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        prosesKirimData(position.coords.latitude, position.coords.longitude, guru, jenis);
-      },
-      async () => { 
-        prosesKirimData(0, 0, guru, jenis);
-      },
+      (position) => { prosesKirimData(position.coords.latitude, position.coords.longitude, guru, jenis); },
+      () => { prosesKirimData(0, 0, guru, jenis); },
       { enableHighAccuracy: true, timeout: 5000 }
     );
   }
@@ -110,8 +104,6 @@
     const yyyy = sekarang.getFullYear();
     const mm = String(sekarang.getMonth() + 1).padStart(2, '0');
     const dd = String(sekarang.getDate()).padStart(2, '0');
-    
-    // Memberi tanda petik tunggal di depan jam murni teks agar Google Sheets tidak mengubahnya jadi tanggal 1899
     const jamFormat = `'${String(sekarang.getHours()).padStart(2, '0')}:${String(sekarang.getMinutes()).padStart(2, '0')}:${String(sekarang.getSeconds()).padStart(2, '0')}`;
     
     const payload = {
@@ -119,7 +111,7 @@
       nama: guru.nama,
       nip: guru.nip,
       jam: jamFormat,
-      status: "-", // Status dihitung & diisi otomatis oleh server doPost Apps Script
+      status: "-", 
       jenis: jenis,
       hari: namaHari[hariIni],
       hari_angka: hariIni,
@@ -127,11 +119,8 @@
     };
 
     try {
-      // Konversi paket data ke urlencoded form body agar kompatibel penuh dengan Apps Script dan anti-CORS
       const formBody = new URLSearchParams();
-      for (const key in payload) {
-        formBody.append(key, payload[key]);
-      }
+      for (const key in payload) { formBody.append(key, payload[key]); }
 
       await fetch(URL_GOOGLE_SCRIPT, {
         method: "POST",
@@ -145,10 +134,9 @@
       status.className = "tepat";
       
     } catch (error) {
-      status.innerHTML = "❌ Gangguan Sistem Jaringan Server Google Sheets.";
+      status.innerHTML = "❌ Gagal kirim data. Cek internet / Deploy Script 'Anyone'";
       status.className = "telat";
     }
-
     btnMasuk.disabled = false;
     btnPulang.disabled = false;
   }
