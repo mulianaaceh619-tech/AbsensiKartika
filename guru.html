@@ -105,13 +105,19 @@
     tbody.innerHTML = `<tr><td colspan="8">Tidak ada data absen di tanggal ini</td></tr>`;
   } else {
     data.forEach((row, i) => {
+      // INI KUNCINYA: BUANG TANGGAL 1899
+      let jamBersih = String(row.jam).split(" ")[4] || String(row.jam); // ambil 23:43:25
+      if(jamBersih.length > 8) jamBersih = jamBersih.substring(0,8);
+      jamBersih = jamBersih + " WIB";
+
       const kelas = (row.status.toLowerCase().includes('tepat') || row.jenis.toLowerCase() === 'pulang')? 'status-tepat' : 'status-telat';
+      
       tbody.innerHTML += `
         <tr>
           <td>${i+1}</td>
           <td>${row.nama}</td>
           <td>${row.nip}</td>
-          <td><b>${row.jam}</b></td>
+          <td><b>${jamBersih}</b></td> 
           <td class="${kelas}">${row.status}</td>
           <td>${row.jenis}</td>
           <td>${row.hari}</td>
