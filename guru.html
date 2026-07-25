@@ -1,79 +1,112 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Rekap Absensi Guru</title>
 <style>
 body{font-family:Arial,sans-serif;background:#f4f6f8;margin:0;padding:20px}
 .container{max-width:1200px;margin:auto;background:white;padding:20px;border-radius:10px;box-shadow:0 2px 10px rgba(0,0,0,.1)}
-h1{text-align:center;color:#2c3e50}.sub{text-align:center;color:#7f8c8d;margin-bottom:20px}
+h1{text-align:center;color:#2c3e50}
+.sub{text-align:center;color:#7f8c8d;margin-bottom:20px}
 .filter{display:flex;gap:10px;align-items:center;margin-bottom:20px;flex-wrap:wrap}
 input[type=date]{padding:8px;border:1px solid #ddd;border-radius:5px}
 button{padding:10px 15px;border:none;border-radius:5px;cursor:pointer;font-weight:bold}
-.btn-tampil{background:#3498db;color:white}.btn-cetak{background:#27ae60;color:white}
+.btn-tampil{background:#3498db;color:white}
+.btn-cetak{background:#27ae60;color:white}
 .btn-logout{background:#e74c3c;color:white;float:right}
 table{width:100%;border-collapse:collapse;margin-top:20px;display:none}
-th,td{border:1px solid #ddd;padding:10px;text-align:left}th{background:#3498db;color:white}
-tr:nth-child(even){background:#f9f9f9}.loading{text-align:center;padding:20px;display:none}
-.status-tepat{color:green;font-weight:bold}.status-telat{color:red;font-weight:bold}
+th,td{border:1px solid #ddd;padding:10px;text-align:left}
+th{background:#3498db;color:white}
+tr:nth-child(even){background:#f9f9f9}
+.loading{text-align:center;padding:20px;display:none}
+.status-tepat{color:green;font-weight:bold}
+.status-telat{color:red;font-weight:bold}
 </style>
 </head>
 <body>
 <div class="container">
-  <button class="btn-logout" onclick="logout()">Logout</button>
+  <button class="btn-logout" onclick="logout()">Keluar</button>
   <h1>📊 REKAP ABSENSI GURU</h1>
   <p class="sub">SMP KARTIKA XIV BANDA ACEH</p>
+
   <div class="filter">
     <label><b>Pilih Tanggal:</b></label>
     <input type="date" id="tanggal">
-    <button class="btn-tampil" onclick="ambilData()">🔍 Tampilkan</button>
+    <button class="btn-tampil" onclick="ambilData()">🔍 Tampilkan Data</button>
     <button class="btn-cetak" onclick="window.print()">🖨️ Cetak</button>
   </div>
+
   <h3 id="judulTanggal"></h3>
-  <div class="loading" id="loading">Loading data...</div>
+  <div class="loading" id="loading">Sedang memuat data...</div>
+
   <table id="tabelAbsen">
-    <thead><tr><th>No</th><th>Nama</th><th>NIP</th><th>Jam</th><th>Status</th><th>Jenis</th><th>Hari</th><th>Lokasi</th></tr></thead>
+    <thead>
+      <tr>
+        <th>No</th><th>Nama</th><th>NIP</th><th>Jam</th>
+        <th>Status</th><th>Jenis</th><th>Hari</th><th>Lokasi</th>
+      </tr>
+    </thead>
     <tbody id="isiTabel"></tbody>
   </table>
 </div>
+
 <script>
-const URL_GOOGLE_SCRIPT = "https://script.google.com/macros/s/AKfycbyHJ0qfdck5MpA7J3_H-iF_DBF0PqUMUnWnDHMt9998JhfQ-Zc0FM5sPe_SkckWnRlP/exec";
-document.getElementById('tanggal').value = "2026-07-24"; // tanggal yg ada datanya
+const URL_GOOGLE_SCRIPT = "https://script.google.com/macros/s/AKfycbzj-2nLAmQV7ja8pXKi_vPTxv71DEIEe8H_utLdHbZrpznHXwyGj7FM-jkw_VEP8UD2/exec";
+
+// Set tanggal hari ini otomatis
+document.getElementById('tanggal').valueAsDate = new Date();
 
 async function ambilData() {
   document.getElementById('loading').style.display = 'block';
   document.getElementById('tabelAbsen').style.display = 'none';
+
   const tglInput = document.getElementById('tanggal').value;
-  const [yyyy, mm, dd] = tglInput.split("-");
-  const tglCari = `${dd}/${mm}/${yyyy}`;
+  const [tahun, bulan, hari] = tglInput.split("-");
+  const tglCari = `${hari}/${bulan}/${tahun}`;
+
   document.getElementById('judulTanggal').innerText = `Data Absensi Tanggal: ${tglCari}`;
+
   try {
     const res = await fetch(URL_GOOGLE_SCRIPT);
     const data = await res.json();
     tampilkanTabel(data, tglCari);
   } catch(err) {
     document.getElementById('loading').style.display = 'none';
-    alert("Gagal ambil data: " + err);
+    alert("Gagal mengambil data: " + err);
   }
 }
+
 function tampilkanTabel(data, tglCari) {
   document.getElementById('loading').style.display = 'none';
-  const tbody = document.getElementById('isiTabel'); tbody.innerHTML = "";
-  const dataFilter = data.filter(row => row[0] === tglCari);
+  const tbody = document.getElementById('isiTabel');
+  tbody.innerHTML = "";
+
+  const dataFilter = data.filter(baris => baris[0] === tglCari);
+
   if(dataFilter.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center">Tidak ada data absen di tanggal ${tglCari}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center">Tidak ada data absensi pada tanggal ${tglCari}</td></tr>`;
   } else {
-    dataFilter.forEach((row, i) => {
-      let kelas = (row[4].toLowerCase().includes('tepat') || row[5].toLowerCase() === 'pulang')? 'status-tepat' : 'status-telat';
+    dataFilter.forEach((baris, i) => {
+      let kelasStatus = (baris[4].toLowerCase().includes('tepat') || baris[5].toLowerCase() === 'pulang')? 'status-tepat' : 'status-telat';
       tbody.innerHTML += `<tr>
-        <td>${i+1}</td><td>${row[1]}</td><td>${row[2]}</td><td><b>${row[3]} WIB</b></td>
-        <td class="${kelas}">${row[4]}</td><td>${row[5]}</td><td>${row[6]}</td><td><small>${row[7]}</small></td>
+        <td>${i+1}</td>
+        <td>${baris[1]}</td>
+        <td>${baris[2]}</td>
+        <td><b>${baris[3]} WIB</b></td>
+        <td class="${kelasStatus}">${baris[4]}</td>
+        <td>${baris[5]}</td>
+        <td>${baris[6]}</td>
+        <td><small>${baris[7]}</small></td>
       </tr>`;
     });
   }
   document.getElementById('tabelAbsen').style.display = 'table';
 }
-function logout(){ if(confirm("Yakin mau logout?")) window.location.href = "index.html"; }
+
+function logout(){
+  if(confirm("Yakin ingin keluar?")) window.location.href = "index.html";
+}
 </script>
 </body>
 </html>
