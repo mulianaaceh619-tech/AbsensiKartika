@@ -77,41 +77,27 @@ async function ambilData() {
   }
 }
 
-function tampilkanTabel(data, tglCari) {
+function tampilkanTabel(data) {
   document.getElementById('loading').style.display = 'none';
   const tbody = document.getElementById('isiTabel');
   tbody.innerHTML = "";
 
-  // FILTER DATA SESUAI TANGGAL
-  const dataFilter = data.filter(row => {
-    let tglRow = String(row[0]).split(" ")[0]; // kolom 0 = tanggal
-    return tglRow === tglCari;
-  });
-
-  if(dataFilter.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center">Tidak ada data absen di tanggal ${tglCari}</td></tr>`;
+  if(data.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center">Sheet kosong</td></tr>`;
   } else {
-    dataFilter.forEach((row, i) => {
-      // ANTI 1899: ambil jam doang
-      let jam = String(row[3]).split(" ").pop();
-
+    data.forEach((row, i) => {
+      let jam = String(row[3]).split(" ").pop(); // anti 1899
       let kelas = (row[4].toLowerCase().includes('tepat') || row[5].toLowerCase() === 'pulang')? 'status-tepat' : 'status-telat';
 
       tbody.innerHTML += `<tr>
-        <td>${i+1}</td>
-        <td>${row[1]}</td>
-        <td>${row[2]}</td>
+        <td>${i+1}</td><td>${row[1]}</td><td>${row[2]}</td>
         <td><b>${jam} WIB</b></td>
-        <td class="${kelas}">${row[4]}</td>
-        <td>${row[5]}</td>
-        <td>${row[6]}</td>
-        <td><small>${row[7]}</small></td>
+        <td class="${kelas}">${row[4]}</td><td>${row[5]}</td><td>${row[6]}</td><td><small>${row[7]}</small></td>
       </tr>`;
     });
   }
   document.getElementById('tabelAbsen').style.display = 'table';
 }
-
 function logout(){
   if(confirm("Yakin mau logout?")) window.location.href = "index.html";
 }
