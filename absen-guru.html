@@ -39,7 +39,7 @@
 
 <script>
   // === PENTING: SAMAKAN URL INI DENGAN YANG DI guru.html ===
-  const URL_GOOGLE_SCRIPT = "https://script.google.com/macros/s/AKfycbxjv3OA8EWPXnIY7v94LjAgd6H322PxWaQh_jYtIC0pPncwPHIip_uetWOtAsHXUapm/exec";
+  const URL_GOOGLE_SCRIPT = "https://script.google.com/macros/s/AKfycbwwQit6mreprb7WBGbXXBUMb_U-ceo_xyuFU3EXzCwk8Eydm08fvylQNbB7zQVFr6-4/exec";
   
   const daftarGuru = [
     {nama: "Sabriadi,S.Pd", nip: "197705092007011016"},
@@ -107,10 +107,10 @@
     const jamFormat = `'${String(sekarang.getHours()).padStart(2, '0')}:${String(sekarang.getMinutes()).padStart(2, '0')}:${String(sekarang.getSeconds()).padStart(2, '0')}`;
     
     const payload = {
-      tanggal: `${yyyy}-${mm}-${dd}`,
+      tanggal: `${dd}/${mm}/${yyyy}`, // 25/07/2026
       nama: guru.nama,
       nip: guru.nip,
-      jam: jamFormat,
+      jam: `${String(sekarang.getHours()).padStart(2, '0')}:${String(sekarang.getMinutes()).padStart(2, '0')}:${String(sekarang.getSeconds()).padStart(2, '0')}`,
       status: "-", 
       jenis: jenis,
       hari: namaHari[hariIni],
