@@ -52,71 +52,62 @@ tr:nth-child(even){background:#f9f9f9}
 </div>
 
 <script>
-// ========== SETTING ==========
+// ========== URL SCRIPT KAMU ==========
 const URL_GOOGLE_SCRIPT = "https://script.google.com/macros/s/AKfycbx13q61r2a3unDV9F5ZdkBE5uMTolYiRHr_GrbM9F_fUzjv5QD-AvkZLzol-hXsrRvp/exec";
-const NAMA_HARI = ["Minggu","Senin","Selasa","Rabu","Kamis","Jumat","Sabtu"];
-// =============================
+// ======================================
 
-// Set tanggal hari ini otomatis
 document.getElementById('tanggal').valueAsDate = new Date();
 
-function ambilData() {
+async function ambilData() {
   document.getElementById('loading').style.display = 'block';
   document.getElementById('tabelAbsen').style.display = 'none';
 
   const tglInput = document.getElementById('tanggal').value; // 2026-07-25
   const [yyyy, mm, dd] = tglInput.split("-");
-  window.tglCari = `${dd}/${mm}/${yyyy}`; // 25/07/2026
+  const tglCari = `${dd}/${mm}/${yyyy}`; // 25/07/2026
+  document.getElementById('judulTanggal').innerText = `Data Absensi Tanggal: ${tglCari}`;
 
-  document.getElementById('judulTanggal').innerText = `Data Absensi Tanggal: ${window.tglCari}`;
-
-  // Hapus script lama biar gak numpuk
-  const oldScript = document.getElementById('jsonp');
-  if(oldScript) oldScript.remove();
-
-  const script = document.createElement('script');
-  script.id = 'jsonp';
-  script.src = `${URL_GOOGLE_SCRIPT}?callback=tampilkanTabel`;
-  document.body.appendChild(script);
+  try {
+    const res = await fetch(URL_GOOGLE_SCRIPT);
+    const data = await res.json();
+    tampilkanTabel(data, tglCari);
+  } catch(err) {
+    document.getElementById('loading').style.display = 'none';
+    alert("Gagal ambil data: " + err + "\nCek apakah Script sudah Deploy Anyone");
+  }
 }
 
-function tampilkanTabel(data) {
+function tampilkanTabel(data, tglCari) {
   document.getElementById('loading').style.display = 'none';
   const tbody = document.getElementById('isiTabel');
   tbody.innerHTML = "";
 
-  if(!data || data.error) {
-    tbody.innerHTML = `<tr><td colspan="8">Error: ${data.message || 'Gagal ambil data'}</td></tr>`;
+  // FILTER DATA SESUAI TANGGAL
+  const dataFilter = data.filter(row => {
+    let tglRow = String(row[0]).split(" ")[0]; // kolom 0 = tanggal
+    return tglRow === tglCari;
+  });
+
+  if(dataFilter.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center">Tidak ada data absen di tanggal ${tglCari}</td></tr>`;
   } else {
-    // FILTER BERDASARKAN TANGGAL DARI SHEET
-    const dataFilter = data.filter(row => {
-      let tglRow = String(row.tanggal).split(" ")[0]; // ambil 25/07/2026 dari "25/07/2026 13:03:00"
-      return tglRow === window.tglCari;
+    dataFilter.forEach((row, i) => {
+      // ANTI 1899: ambil jam doang
+      let jam = String(row[3]).split(" ").pop();
+
+      let kelas = (row[4].toLowerCase().includes('tepat') || row[5].toLowerCase() === 'pulang')? 'status-tepat' : 'status-telat';
+
+      tbody.innerHTML += `<tr>
+        <td>${i+1}</td>
+        <td>${row[1]}</td>
+        <td>${row[2]}</td>
+        <td><b>${jam} WIB</b></td>
+        <td class="${kelas}">${row[4]}</td>
+        <td>${row[5]}</td>
+        <td>${row[6]}</td>
+        <td><small>${row[7]}</small></td>
+      </tr>`;
     });
-
-    if(dataFilter.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="8" style="text-align:center">Tidak ada data absen di tanggal ${window.tglCari}</td></tr>`;
-    } else {
-      dataFilter.forEach((row, i) => {
-        // ANTI 1899: AMBIL JAMNYA AJA
-        let jamMentah = String(row.jam);
-        let jamBersih = jamMentah.match(/\d{2}:\d{2}:\d{2}/);
-        jamBersih = jamBersih? jamBersih[0] + " WIB" : jamMentah + " WIB";
-
-        let kelasStatus = (row.status.toLowerCase().includes('tepat') || row.jenis.toLowerCase() === 'pulang')? 'status-tepat' : 'status-telat';
-
-        tbody.innerHTML += `<tr>
-          <td>${i+1}</td>
-          <td>${row.nama}</td>
-          <td>${row.nip}</td>
-          <td><b>${jamBersih}</b></td>
-          <td class="${kelasStatus}">${row.status}</td>
-          <td>${row.jenis}</td>
-          <td>${row.hari}</td>
-          <td><small>${row.lokasi}</small></td>
-        </tr>`;
-      });
-    }
   }
   document.getElementById('tabelAbsen').style.display = 'table';
 }
