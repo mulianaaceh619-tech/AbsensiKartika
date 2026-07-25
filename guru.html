@@ -51,54 +51,18 @@ const NAMA_BULAN = ["Jan","Feb","Mar","Apr","Mei","Jun","Jul","Ags","Sep","Okt",
 
 document.getElementById('tanggal').valueAsDate = new Date();
 
-function ambilData() {
-  const tglInput = document.getElementById('tanggal').value; // 2026-07-25
-  if(!tglInput) return alert("Pilih tanggal dulu");
-
-  const [yyyy, mm, dd] = tglInput.split("-");
-  document.getElementById('judulTanggal').innerText = `Data Tanggal: ${dd}/${mm}/${yyyy}`;
-
-  document.getElementById('tabelAbsen').style.display = 'none';
-  document.getElementById('isiTabel').innerHTML = `<tr><td colspan="8">Memuat data...</td></tr>`;
-
-  const script = document.createElement('script');
-  script.src = `${URL_GOOGLE_SCRIPT}?tgl=${tglInput}&callback=tampilkanTabel`;
-  document.body.appendChild(script);
-}
-
 function tampilkanTabel(data) {
-  document.getElementById('loading').style.display = 'none';
   const tbody = document.getElementById('isiTabel');
   tbody.innerHTML = "";
-
-  if(!data || data.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="8">Tidak ada data absen di tanggal ini</td></tr>`;
+  if(data.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="8">Tidak ada data</td></tr>`;
   } else {
     data.forEach((row, i) => {
-      // INI KUNCI ANTI 1899: JANGAN DIJADIKAN DATE
-      let jamMentah = String(row.jam);
-      
-      // Kalau isinya "13:03:00" atau "1899-12-30T13:03:00" kita ambil 13:03:00 nya aja
-      let jamBersih = jamMentah.match(/\d{2}:\d{2}:\d{2}/);
-      jamBersih = jamBersih? jamBersih[0] + " WIB" : jamMentah + " WIB";
-
-      // Ambil tanggal dari row.tanggal bukan dari jam
-      let tgl = new Date(row.tanggal);
-      let hari = ["Minggu","Senin","Selasa","Rabu","Kamis","Jumat","Sabtu"][tgl.getDay()];
-
-      const kelas = (row.status.toLowerCase().includes('tepat') || row.jenis.toLowerCase() === 'pulang')? 'status-tepat' : 'status-telat';
-      
-      tbody.innerHTML += `
-        <tr>
-          <td>${i+1}</td>
-          <td>${row.nama}</td>
-          <td>${row.nip}</td>
-          <td><b>${jamBersih}</b></td> 
-          <td class="${kelas}">${row.status}</td>
-          <td>${row.jenis}</td>
-          <td>${hari}</td>
-          <td><small>${row.lokasi}</small></td>
-        </tr>`;
+      tbody.innerHTML += `<tr>
+        <td>${i+1}</td><td>${row.nama}</td><td>${row.nip}</td>
+        <td><b>${row.jam} WIB</b></td> // TINGGAL TAMBAH WIB
+        <td>${row.status}</td><td>${row.jenis}</td><td>${row.hari}</td><td>${row.lokasi}</td>
+      </tr>`;
     });
   }
   document.getElementById('tabelAbsen').style.display = 'table';
