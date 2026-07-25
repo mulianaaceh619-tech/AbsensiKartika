@@ -5,67 +5,124 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Rekap Absensi Guru</title>
 <style>
-body { font-family: 'Segoe UI', sans-serif; background: #f0f4f8; padding: 20px; }
-.container { max-width: 1200px; margin: auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-h2 { text-align: center; color: #2c3e50; }
-.controls { display: flex; gap: 10px; margin-bottom: 20px; align-items: flex-end; flex-wrap: wrap; }
-input[type="date"], button { padding: 10px; border-radius: 8px; border: 1px solid #ccc; font-size: 16px; }
-.btn-tampil { background: #3498db; color: white; cursor: pointer; }
-.btn-cetak { background: #2ecc71; color: white; cursor: pointer; }
-.btn-logout { background: #e74c3c; color: white; cursor: pointer; margin-left: auto; }
-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-th, td { border: 1px solid #ddd; padding: 10px; text-align: center; }
-th { background: #3498db; color: white; }
-.status-tepat { color: #2ecc71; font-weight: bold; }
-.status-telat { color: #e74c3c; font-weight: bold; }
+body{font-family:Arial,sans-serif;background:#f4f6f8;margin:0;padding:20px}
+.container{max-width:1200px;margin:auto;background:white;padding:20px;border-radius:10px;box-shadow:0 2px 10px rgba(0,0,0,.1)}
+h1{text-align:center;color:#2c3e50}
+.sub{text-align:center;color:#7f8c8d;margin-bottom:20px}
+.filter{display:flex;gap:10px;align-items:center;margin-bottom:20px;flex-wrap:wrap}
+input[type=date]{padding:8px;border:1px solid #ddd;border-radius:5px}
+button{padding:10px 15px;border:none;border-radius:5px;cursor:pointer;font-weight:bold}
+.btn-tampil{background:#3498db;color:white}
+.btn-cetak{background:#27ae60;color:white}
+.btn-logout{background:#e74c3c;color:white;float:right}
+table{width:100%;border-collapse:collapse;margin-top:20px;display:none}
+th,td{border:1px solid #ddd;padding:10px;text-align:left}
+th{background:#3498db;color:white}
+tr:nth-child(even){background:#f9f9f9}
+.loading{text-align:center;padding:20px;display:none}
+.status-tepat{color:green;font-weight:bold}
+.status-telat{color:red;font-weight:bold}
 </style>
 </head>
 <body>
 <div class="container">
-  <h2>📊 REKAP ABSENSI GURU</h2>
-  <p style="text-align:center; color:gray;">SMP KARTIKA XIV BANDA ACEH</p>
+  <button class="btn-logout" onclick="logout()">Logout</button>
+  <h1>📊 REKAP ABSENSI GURU</h1>
+  <p class="sub">SMP KARTIKA XIV BANDA ACEH</p>
 
-  <div class="controls">
-    <div>
-      <label><b>Pilih Tanggal:</b></label><br>
-      <input type="date" id="tanggal">
-    </div>
+  <div class="filter">
+    <label><b>Pilih Tanggal:</b></label>
+    <input type="date" id="tanggal">
     <button class="btn-tampil" onclick="ambilData()">🔍 Tampilkan</button>
     <button class="btn-cetak" onclick="window.print()">🖨️ Cetak</button>
-    <button class="btn-logout" onclick="logout()">Logout</button>
   </div>
-  <h4 id="judulTanggal" style="text-align:center;"></h4>
 
-  <table id="tabelAbsen" style="display:none;">
+  <h3 id="judulTanggal"></h3>
+  <div class="loading" id="loading">Loading data...</div>
+
+  <table id="tabelAbsen">
     <thead>
-      <tr><th>No</th><th>Nama Guru</th><th>NIP</th><th>Jam Absen</th><th>Status</th><th>Jenis</th><th>Hari</th><th>Lokasi</th></tr>
+      <tr>
+        <th>No</th><th>Nama</th><th>NIP</th><th>Jam</th>
+        <th>Status</th><th>Jenis</th><th>Hari</th><th>Lokasi</th>
+      </tr>
     </thead>
     <tbody id="isiTabel"></tbody>
   </table>
 </div>
 
 <script>
-const URL_GOOGLE_SCRIPT = "https://script.google.com/macros/s/AKfycbyKsz5n2svpPE-N3TX9A5QifDxrhM6ZbuL_mLmxvoCltDglQ2Q_-yNd9hOGWqv4XXyp/exec";
+// ========== SETTING ==========
+const URL_GOOGLE_SCRIPT = "https://script.google.com/macros/s/AKfycbwDf5mRx3IQMPMJYRWGtC83GaBbUwrAF37P9R-KpIb ekCSCqh-6yL2a-o78_JT7K/exec";
 const NAMA_HARI = ["Minggu","Senin","Selasa","Rabu","Kamis","Jumat","Sabtu"];
-const NAMA_BULAN = ["Jan","Feb","Mar","Apr","Mei","Jun","Jul","Ags","Sep","Okt","Nov","Des"];
+// =============================
 
+// Set tanggal hari ini otomatis
 document.getElementById('tanggal').valueAsDate = new Date();
 
+function ambilData() {
+  document.getElementById('loading').style.display = 'block';
+  document.getElementById('tabelAbsen').style.display = 'none';
+
+  const tglInput = document.getElementById('tanggal').value; // 2026-07-25
+  const [yyyy, mm, dd] = tglInput.split("-");
+  window.tglCari = `${dd}/${mm}/${yyyy}`; // 25/07/2026
+
+  document.getElementById('judulTanggal').innerText = `Data Absensi Tanggal: ${window.tglCari}`;
+
+  // Hapus script lama biar gak numpuk
+  const oldScript = document.getElementById('jsonp');
+  if(oldScript) oldScript.remove();
+
+  const script = document.createElement('script');
+  script.id = 'jsonp';
+  script.src = `${URL_GOOGLE_SCRIPT}?callback=tampilkanTabel`;
+  document.body.appendChild(script);
+}
+
 function tampilkanTabel(data) {
+  document.getElementById('loading').style.display = 'none';
   const tbody = document.getElementById('isiTabel');
   tbody.innerHTML = "";
-  if(data.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="8">Tidak ada data</td></tr>`;
+
+  if(!data || data.error) {
+    tbody.innerHTML = `<tr><td colspan="8">Error: ${data.message || 'Gagal ambil data'}</td></tr>`;
   } else {
-    data.forEach((row, i) => {
-      tbody.innerHTML += `<tr>
-        <td>${i+1}</td><td>${row.nama}</td><td>${row.nip}</td>
-        <td><b>${row.jam} WIB</b></td> // TINGGAL TAMBAH WIB
-        <td>${row.status}</td><td>${row.jenis}</td><td>${row.hari}</td><td>${row.lokasi}</td>
-      </tr>`;
+    // FILTER BERDASARKAN TANGGAL DARI SHEET
+    const dataFilter = data.filter(row => {
+      let tglRow = String(row.tanggal).split(" ")[0]; // ambil 25/07/2026 dari "25/07/2026 13:03:00"
+      return tglRow === window.tglCari;
     });
+
+    if(dataFilter.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="8" style="text-align:center">Tidak ada data absen di tanggal ${window.tglCari}</td></tr>`;
+    } else {
+      dataFilter.forEach((row, i) => {
+        // ANTI 1899: AMBIL JAMNYA AJA
+        let jamMentah = String(row.jam);
+        let jamBersih = jamMentah.match(/\d{2}:\d{2}:\d{2}/);
+        jamBersih = jamBersih? jamBersih[0] + " WIB" : jamMentah + " WIB";
+
+        let kelasStatus = (row.status.toLowerCase().includes('tepat') || row.jenis.toLowerCase() === 'pulang')? 'status-tepat' : 'status-telat';
+
+        tbody.innerHTML += `<tr>
+          <td>${i+1}</td>
+          <td>${row.nama}</td>
+          <td>${row.nip}</td>
+          <td><b>${jamBersih}</b></td>
+          <td class="${kelasStatus}">${row.status}</td>
+          <td>${row.jenis}</td>
+          <td>${row.hari}</td>
+          <td><small>${row.lokasi}</small></td>
+        </tr>`;
+      });
+    }
   }
   document.getElementById('tabelAbsen').style.display = 'table';
+}
+
+function logout(){
+  if(confirm("Yakin mau logout?")) window.location.href = "index.html";
 }
 </script>
 </body>
