@@ -54,7 +54,7 @@
   </div>
 
 <script>
-  const URL_GOOGLE_SCRIPT = "https://script.google.com/macros/s/AKfycbwlH9fZLMvHguJzeTrirZZRdAae3kXUlw39pVcBsOBHgp1u7r1nSb0o-9K8QSc4a6xX/exec";
+  const URL_GOOGLE_SCRIPT = "https://script.google.com/macros/s/AKfycbxjv3OA8EWPXnIY7v94LjAgd6H322PxWaQh_jYtIC0pPncwPHIip_uetWOtAsHXUapm/exec";
   const ADMIN_USER = "admin";
   const ADMIN_PASS = "kartika123";
 
@@ -97,21 +97,28 @@
 
   if(data.error){
     tbody.innerHTML = `<tr><td colspan="8" style="color:red">ERROR: ${data.error}</td></tr>`;
-    return;
-  }
-  if(data.msg){
-    tbody.innerHTML = `<tr><td colspan="8" style="color:orange">${data.msg}</td></tr>`;
-    return;
-  }
-  if(!data || data.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="8">Tidak ada data sama sekali di Sheet</td></tr>`;
+    document.getElementById('tabelAbsen').style.display = 'table';
     return;
   }
 
-  // TAMPILIN SEMUA DULU TANPA FILTER TANGGAL
-  data.forEach((row, i) => {
-    tbody.innerHTML += `<tr><td>${i+1}</td><td>${row.nama}</td><td>${row.nip}</td><td>${row.jam}</td><td>${row.status}</td><td>${row.jenis}</td><td>${row.hari}</td><td><small>${row.lokasi}</small><br><small>Tgl Sheet:${row.tanggal_sheet}</small></td></tr>`;
-  });
+  if(!data || data.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="8">Tidak ada data absen di tanggal ini</td></tr>`;
+  } else {
+    data.forEach((row, i) => {
+      const kelas = (row.status.toLowerCase().includes('tepat') || row.jenis.toLowerCase() === 'pulang')? 'status-tepat' : 'status-telat';
+      tbody.innerHTML += `
+        <tr>
+          <td>${i+1}</td>
+          <td>${row.nama}</td>
+          <td>${row.nip}</td>
+          <td><b>${row.jam}</b></td>
+          <td class="${kelas}">${row.status}</td>
+          <td>${row.jenis}</td>
+          <td>${row.hari}</td>
+          <td><small>${row.lokasi}</small></td>
+        </tr>`;
+    });
+  }
   document.getElementById('tabelAbsen').style.display = 'table';
 }
 </script>
