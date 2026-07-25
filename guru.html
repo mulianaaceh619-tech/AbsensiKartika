@@ -1,5 +1,5 @@
 <script>
-  const URL_GOOGLE_SCRIPT = "https://script.google.com/macros/s/AKfycbywJ1jre0rLKXtRJgrebZBXrEUQIM0LWi5VG1DecnTLUhnY6ua5yr50hQpiEXwu2R-X/exec";
+  const URL_GOOGLE_SCRIPT = "https://script.google.com/macros/s/AKfycbywJ1jre0eLkXtR1gpebZ8XrEUQIM0LWi5VG1DecnTUHbnY6ua5yr50hOpJEXu2R-X/exec";
   const ADMIN_USER = "admin";
   const ADMIN_PASS = "kartika123";
 
@@ -13,26 +13,36 @@
       document.getElementById('rekapPage').style.display = 'block';
       loadData();
     } else {
-      document.getElementById('loginError').innerText = "❌ Salah!";
+      document.getElementById('loginError').innerText = "❌ Username atau Password salah!";
     }
   }
+  
   function logout() {
     document.getElementById('rekapPage').style.display = 'none';
     document.getElementById('loginPage').style.display = 'block';
+  }
+
+  function cetakAbsen() {
+    window.print();
   }
 
   function loadData() {
     const tgl = document.getElementById('filterTanggal').value;
     document.getElementById('infoTanggal').innerText = `Data Tanggal: ${tgl}`;
     document.getElementById('loading').style.display = 'block';
+    document.getElementById('tabelAbsen').style.display = 'none';
     
-    // HAPUS SCRIPT LAMA BIAR GA NUMPuk
+    // HAPUS SCRIPT LAMA
     const oldScript = document.getElementById('jsonpScript');
     if(oldScript) oldScript.remove();
 
+    // PAKE JSONP BIAR GA KENA BLOKIR
     const script = document.createElement('script');
     script.id = 'jsonpScript';
     script.src = `${URL_GOOGLE_SCRIPT}?tgl=${tgl}&callback=tampilkanTabel`;
+    script.onerror = function() {
+      document.getElementById('loading').innerText = "❌ Gagal konek. Cek Deploy 'Anyone' di Google Script";
+    }
     document.body.appendChild(script);
   }
 
@@ -40,12 +50,16 @@
     document.getElementById('loading').style.display = 'none';
     const tbody = document.getElementById('isiTabel');
     tbody.innerHTML = "";
-    if(!data || data.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="8">Tidak ada data</td></tr>`;
+    
+    if(!data || data.length === 0 || data.error) {
+      tbody.innerHTML = `<tr><td colspan="8">Tidak ada data absen di tanggal ini</td></tr>`;
     } else {
       data.forEach((row, i) => {
         const kelas = (row.status === 'Tepat Waktu' || row.status === 'Pulang')? 'status-tepat' : 'status-telat';
-        tbody.innerHTML += `<tr><td>${i+1}</td><td>${row.nama}</td><td>${row.nip}</td><td>${row.jam}</td><td class="${kelas}">${row.status}</td><td>${row.jenis}</td><td>${row.hari}</td><td><small>${row.lokasi}</small></td></tr>`;
+        tbody.innerHTML += `<tr>
+          <td>${i+1}</td><td>${row.nama}</td><td>${row.nip}</td><td>${row.jam}</td>
+          <td class="${kelas}">${row.status}</td><td>${row.jenis}</td><td>${row.hari}</td><td><small>${row.lokasi}</small></td>
+        </tr>`;
       });
     }
     document.getElementById('tabelAbsen').style.display = 'table';
